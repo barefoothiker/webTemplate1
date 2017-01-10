@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block css %}
+{% endblock css%}
+
+{% block js %}
+
+{{ plot_script | safe }}
+
+<script type='text/javascript'>//<![CDATA[
+
+ $(document).ready(function() {
+    
+    $('#plotDataTable').DataTable();
+    
+  });
+  
+  function validateForm(obj){
+    
+	if($('#uploadFilePath').val() == '' && $('#uriFilePath').val() == '')
+	{
+	   alert("Please upload a file or enter valid URL.")
+	   
+	   return false;
+	}
+
+	if($('#uploadFilePath').val() != '' && $('#uriFilePath').val() != '')
+	{
+	   alert("Please upload a file or enter valid URL but not both.")
+	   
+	   return false;
+	}
+
+
+
+	if($('#fileType').val() == '')
+	{
+	   alert("Please select file type.")
+	   
+	   return false;
+	}
+
+        $('#plotForm').submit();
+  
+        return true;
+  }
+  
+$(window).load(function() {
+    function JSON2CSV(objArray) {
+        var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+
+        for (var i = 0; i < array.length; i++) {
+            var cutoff = $("#id_cutoff").val();
+            array[i]['cutoff'] = cutoff;
+            array[i]['effect (based on user cutoff input)'] = array[i]['score_value'] < cutoff ? 'N' : 'D';
+        }
+
+        var str = '';
+        var line = '';
+
+        var head = array[0];
+        for (var index in array[0]) {
+            var value = index + "";
+            line += '"' + value.replace(/"/g, '""') + '",';
+        }
+
+        line = line.slice(0, -1);
+        str += line + '\r\n';
+
+        for (var i = 0; i < array.length; i++) {
+            var line = '';
+
+            for (var index in array[i]) {
+                var value = array[i][index] + "";
+                line += '"' + value.replace(/"/g, '""') + '",';
+            }
+
+            line = line.slice(0, -1);
+            str += line + '\r\n';
+        }
+
+    return str;
+}
+
+$("#download").click(function() {
+    if ($("#id_cutoff").is(':valid')) {
+        var csv = JSON2CSV('{{ json_recs | safe }}');
+        window.open("data:text/csv;charset=utf-8," + escape(csv));
+    }
+});
+});//]]>
+</script>
+
+
+{% for contrastObj in contrastObjList%}   
+
+  $(document).ready(function() {
+    
+    $('#plotDataPanel-{{plotType}}').DataTable();
+       
+  });
+
+{% endfor %}
+
+</script>
+
+{% endblock js %}
+
+{% block content %}
+
+<!-- /.row -->
+<div class="row">
+  <div class="col-lg-12">
+    <h1 class="page-header">Plots for {{plotType}}</h1>
+    <p>Below are the plots for {{plotType}}.</p>    
+  </div>
+  <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+<form enctype="multipart/form-data" method="post" id="plotForm" name="plotForm" action="/templateApp/selectColumns/">
+  <input type="hidden" value="{{plotTypeId}}" name="plotTypeId" id ="plotTypeId"/>
+ {% csrf_token %} 
+ <div class="row">  
+  <!-- panel for sites -->  
+  <div class="col-lg-12">
+    <!-- Example row of columns -->   
+    <div class="panel panel-primary" id="plotPanel">
+	<div class="panel-heading">
+	    <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion3" href="#plotDataPanel-{{plotType}}">
+	    	Javascript {{ plotType }} </b>&nbsp;(  Please click to toggle this panel. )
+	        </a>
+	    </h4>
+	</div>
+	<div id="plotDataPanel-{{plotType}}" class="panel-collapse collapse in">
+	    <div class="panel-body">	      
+	    
+		<div class="bokeh_data">
+
+		    <div class="table-responsive" >
+		      <table id="plotDataTable" class="display" cellspacing="0" width="100%">
+		       <thead>
+			  <tr >
+			    <th>{{ x }}</th>
+			    <th>{{ y }}</th>
+			    {% if colFlag %}
+				<th>{{ col }}</th>
+			    {% endif %}
+			  </tr>
+		       </thead>
+		       <tbody>
+			{% for valueTuple in valueList%}
+			 <tr>
+			   <td> {{ valueTuple.0}}  </td>
+			   <td> {{ valueTuple.1}}  </td>
+			   {% if colFlag %}
+			    <td> {{ valueTuple.2}}  </td>
+			   {% endif %}			 
+			 </tr>
+		       {% endfor %}
+		       </tbody>
+		      </table>
+		    </div>
+		    <!-- #bokeh_data -->
+		</div> 
+		<!-- #bokeh_data -->
+			  
+	    </div>
+	      <!-- end panel body -->			    
+	</div>
+        <!-- end panel -->
+    </div>     
+<!--</div>-->
+{% if plotType != "Cluster_Map" %}
+ <!--<div class="row">  -->
+  <!-- panel for sites -->  
+  <div class="col-lg-12">
+    <!-- Example row of columns -->   
+    <div class="panel panel-primary" id="plotPanel">
+	<div class="panel-heading">
+	    <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion3" href="#plotClientSidePanel-{{plotType}}">
+	    	Javascript {{ plotType }} </b>&nbsp;(  Please click to toggle this panel. )
+	        </a>
+	    </h4>
+	</div>
+	<div id="plotClientSidePanel-{{plotType}}" class="panel-collapse collapse in">
+	    <div class="panel-body">	  
+		      
+		<div class="bokeh_plots">
+		  {{ plot_div | safe }}
+		</div> <!-- #bokeh_plots -->
+			  
+	    </div>
+	      <!-- end panel body -->			    
+	</div>
+        <!-- end panel -->
+    </div>     
+{% endif %}
+<!--</div>-->
+ <div class="row">  
+  <!--<!-- panel for sites -->  
+  <div class="col-lg-12">
+    <!-- Example row of columns -->   
+    <div class="panel panel-primary" id="plotPanel"style="overflow-x:auto;">
+	<div class="panel-heading">
+	    <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion3" href="#plotServerSidePanel-{{plotType}}">
+	    	Server Side {{ plotType }} </b>&nbsp;(  Please click to toggle this panel. )
+	        </a>
+	    </h4>
+	</div>
+	<div id="plotServerSidePanel-{{plotType}}" class="panel-collapse collapse in">
+	    <div class="panel-body">	      
+	    
+		<div class="bokeh_plots">
+		  <img src = "/static/img/{{plotName}}" height="400px;" width="800px;"/>
+		</div> <!-- #bokeh_plots -->
+			  
+	    </div>
+	      <!-- end panel body -->			    
+	</div>
+        <!-- end panel -->
+    </div>         
+    
+    <div class="panel panel-primary" id="plotPanel">
+	<div class="panel-heading">
+	    <h4 class="panel-title">
+	        <a data-toggle="collapse" data-parent="#accordion3" href="#plotUploadPanel-{{plotType}}">
+	    	{{ plotType }} - Try it out!</b>&nbsp;(  Please click to toggle this panel. )
+	        </a>
+	    </h4>
+	</div>
+	<div id="plotUploadPanel-{{plotType}}" class="panel-collapse collapse in">
+	    <div class="panel-body">	 
+		<p>
+		  <label>Upload File:</label>&nbsp;
+		  <input class="form-control" name="uploadFilePath" id="uploadFilePath" type = "file"> 
+		<p class="help-block">Select input file in JSON format.</p>
+		<p>
+		OR
+		</p>
+		<p>
+		  <label>Provide URI:</label>&nbsp;
+		  <input class="form-control" name="uriFilePath" id="uriFilePath" type = "text"> 
+		<p class="help-block">Please provide a URI to a CSV or TSV or JSON file.</p>
+
+		<p>
+		  <label>File Type:</label>&nbsp;
+		    <select id ="fileType" name ="fileType" value="" >
+		      <option id = "default" value = "">--Select File Type--</option>
+			<option id = "csv" value = "csv">CSV</option>
+			<option id = "tsv" value = "tsv">TSV</option>
+			<option id = "json" value = "json">JSON</option>
+		    </select>
+		<p class="help-block">Select File Type (either for upload or URI).</p>
+
+		<button type="submit" class="btn btn-primary " value = "1" name = "uploadJSONFile" id = "uploadJSONFile" style="margin-bottom: 5px;margin-right: 5px; width:200px;" onclick= "return validateForm(this);" >Submit</button>&nbsp;		
+	  
+	    </div>
+	      <!-- end panel body -->			    
+	</div>
+        <!-- end panel -->
+    </div>     
+</div>   
+</div>
+ 
+</form>
+{% endblock content %}
+
+

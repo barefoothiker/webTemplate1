@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% load staticfiles %}
+<script src="{% static "js/bokeh-0.11.0.min.js" %}"></script>
+<script src="{% static "js/bokeh-widgets-0.11.0.min.js" %}"></script>
+
+<link href="{% static "css/bokeh-0.11.0.min.css" %}" rel="stylesheet" type="text/css">
+<link href="{% static "css/bokeh-widgets-0.11.0.min.css" %}" rel="stylesheet" type="text/css">
+
+{{ heatmap_script | safe }}
+{{ boxplot_script | safe }}
+{{ roc_curve_script | safe }}
+
+<script type='text/javascript'>//<![CDATA[
+$(window).load(function() {
+    function JSON2CSV(objArray) {
+        var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+
+        for (var i = 0; i < array.length; i++) {
+            var cutoff = $("#id_cutoff").val();
+            array[i]['cutoff'] = cutoff;
+            array[i]['effect (based on user cutoff input)'] = array[i]['score_value'] < cutoff ? 'N' : 'D';
+        }
+
+        var str = '';
+        var line = '';
+
+        var head = array[0];
+        for (var index in array[0]) {
+            var value = index + "";
+            line += '"' + value.replace(/"/g, '""') + '",';
+        }
+
+        line = line.slice(0, -1);
+        str += line + '\r\n';
+
+        for (var i = 0; i < array.length; i++) {
+            var line = '';
+
+            for (var index in array[i]) {
+                var value = array[i][index] + "";
+                line += '"' + value.replace(/"/g, '""') + '",';
+            }
+
+            line = line.slice(0, -1);
+            str += line + '\r\n';
+        }
+
+    return str;
+}
+
+$("#download").click(function() {
+    if ($("#id_cutoff").is(':valid')) {
+        var csv = JSON2CSV('{{ json_recs | safe }}');
+        window.open("data:text/csv;charset=utf-8," + escape(csv));
+    }
+});
+});//]]>
+</script>
+
+<div class="main-container">
+    <div class="main wrapper clearfix">
+
+        <form  action="{% url 'reporting:report' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form }}
+            <input type="submit" value="Upload"/>
+        </form>
+
+        <div class="bokeh_plots">
+            {{ heatmap_div | safe }}
+            {{ boxplot_div | safe }}
+            {{ roc_curve_div | safe }}
+        </div> <!-- #bokeh_plots -->
+
+    {% if json_recs %}
+        <label for="id_cutoff">Cutoff:</label></th><td><input id="id_cutoff" max="1" min="0" name="cutoff" step="0.001" type="number" required/></td></tr>
+        <button id="download">Download CSV</button>
+    {% endif %}
+
+    </div> <!-- #main wrapper -->
+</div> <!-- #main-container -->
+
+{% endblock %}

@@ -1,0 +1,3 @@
+[submodule "lola"]
+	path = lola
+	url = https://sidmitra2@bitbucket.org/mjharrigan/lola.git

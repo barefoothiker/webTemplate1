@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block css %}
+
+{% endblock css%}
+{% block js %}
+
+<script type="text/javascript">
+
+  $(document).ready(function() {
+    $('#columnsTable').DataTable({paging:false});
+    $('#valuesTable').DataTable();
+  } );
+  
+  function submitDataFileForm(obj){
+      objId = obj.id;
+
+      data = objId.split("-");
+
+      if (data.length > 0){
+
+         dataFileId = data[1];
+
+      }
+
+    $("#dataFileId").val(dataFileId);
+
+    $("#dataFileForm").submit();
+  }
+
+  function validateForm(){
+  
+  numChecked = 0
+  
+  {% for columnName in columns %}
+    if ( $('#columnName-{{forloop.counter0}}').is(':checked') )
+    {
+      numChecked += 1
+    }
+
+  {% endfor %}  
+  
+    if (numChecked != 2){
+  
+      alert("Please select 2 columns");
+      
+      return false;
+  
+    }
+    return true;
+
+  }
+
+</script>
+
+{% endblock js %}
+
+{% block content %}
+
+<!-- /.row -->
+<div class="row">
+  <div class="col-lg-12">
+    <h1 class="page-header">Select Columns for plot</h1>
+  </div>
+  <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+<form method = "post" id="analyzeFileSelectFactorsForm" name="analyzeFileSelectFactorsForm" action="/templateApp/selectColumnsSubmit/" onsubmit="return validateForm();" >
+ 
+ {% csrf_token %} 
+
+ <input type="hidden" value="{{datafilePath}}" name="datafilePath" id ="datafilePath"/> 
+ <input type="hidden" value="{{plotTypeId}}" name="plotTypeId" id ="plotTypeId"/>  
+  <input type="hidden" value="{{fileType}}" name="fileType" id ="fileType"/>  
+ <div class="row">  
+
+  <!-- panel for sites -->  
+  <div class="col-lg-12">
+    <div class="panel panel-primary">
+      <div class="panel-heading">
+      	  <h4 class="panel-title">
+	    <a data-toggle="collapse" data-parent="#panels1" href="#selectColumnsPanel">
+	      Columns. (Click to toggle this panel.)
+	    </a>
+	  </h4>  
+      </div>
+      <!-- /.panel-heading -->
+      <div class="panel-body" style="overflow-y:auto;height:300px;" -webkit-scrollbar>
+       <div id="phenotypeColumnsPanel" class="panel-collapse collapse in" >      
+        <div class="table-responsive" >
+	  <p>
+	  
+	    <label>Label Column:</label>&nbsp;
+	    <select id ="labelColumn" name ="labelColumn" value="" >
+	      <option id = "default" value = "">--Select Label Columns--</option>
+	       {% for column in columns %}
+		<option id = "{{column}}" value = "{{column}}">{{column}}</option>
+	      {% endfor %}
+	    </select>
+    	    <p class="help-block">Please select any label column.</p>
+  	  
+	  </p>
+	  <table id="columnsTable" name="columnsTable" class="display" cellspacing="0" width="100%" >	  
+	   <thead>
+	      <tr >
+                <th>Select</th>
+                <th>Column Name</th>
+              </tr>
+           </thead>
+           <tbody>
+           {% for column in columns %}
+             <tr>
+               <td><input type = "checkbox" name = "columnName" id = "columnName-{{forloop.counter0}}" value = "{{column}}" /></td>
+               <td>{{column}}</td>
+             </tr>
+           {% endfor %}
+           </tbody>
+          </table>
+        </div>
+        <!-- /.table-responsive -->
+       </div>
+      </div>
+      <!-- /.panel-body -->
+    </div>
+    <!-- /.panel -->
+  </div>
+  <!-- /.col-lg-12 -->
+</div>
+<!-- /. row -->
+
+ <div class="row">  
+
+  <!-- panel for sites -->  
+  <div class="col-lg-12">
+    <div class="panel panel-primary">
+      <div class="panel-heading">
+      	  <h4 class="panel-title">
+	    <a data-toggle="collapse" data-parent="#panels1" href="#selectColumnsPanel">
+	      Values (top 500 records or less). (Click to toggle this panel.)
+	    </a>
+	  </h4>  
+      </div>
+      <!-- /.panel-heading -->
+      <div class="panel-body" style="overflow-y:auto;height:300px;" -webkit-scrollbar>
+       <div id="valuesPanel" class="panel-collapse collapse in" >      
+        <div class="table-responsive" >
+	  <p>
+	  
+	    <label>Enter Labels:</label>&nbsp;
+	    <input id ="labelValues" name ="labelValues" value="" />
+    	    <p class="help-block">Please enter a comma separated list of label values.</p>
+  	  
+	  </p>
+	  
+	  <table id="valuesTable" name="valuesTable" class="display" cellspacing="0" width="100%" >	  
+	   <thead>
+	      <tr >
+		{% for column in columns %}
+		  <th>{{column}}</th>
+                {% endfor %}
+              </tr>
+           </thead>
+           <tbody>
+           {% for values in valueList %}
+             <tr>
+               {% for dataValue in values %}
+                 <td>{{dataValue}}</td>
+		{% endfor %}
+             </tr>
+           {% endfor %}
+           </tbody>
+          </table>
+        </div>
+        <!-- /.table-responsive -->
+       </div>
+      </div>
+      <!-- /.panel-body -->
+    </div>
+    <!-- /.panel -->
+  </div>
+  <!-- /.col-lg-12 -->
+</div>
+<!-- /. row -->
+
+ 
+<p class="text-center">
+   <button type="submit" class="btn btn-primary btn-lg" value = "0" name = "submitButton" id="submitButton" >Submit</button>
+</p>
+ 
+</form>
+{% endblock content %}
